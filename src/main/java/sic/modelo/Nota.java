@@ -117,6 +117,36 @@ public abstract class Nota implements Serializable {
 
   private long numNotaAfip;
 
+  @JsonGetter("subTotalBruto")
+  public BigDecimal getSubTotalBrutoSegunTipoDeComprobante() {
+    return (this.getTipoComprobante() == TipoDeComprobante.NOTA_CREDITO_B
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_DEBITO_B
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_CREDITO_PRESUPUESTO
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_DEBITO_PRESUPUESTO)
+        ? this.subTotalBruto.add(this.iva21Neto).add(this.iva105Neto)
+        : this.subTotalBruto;
+  }
+
+  @JsonGetter("iva21Neto")
+  public BigDecimal getIva21NetoSegunTipoDeComprobante() {
+    return (this.getTipoComprobante() == TipoDeComprobante.NOTA_CREDITO_B
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_DEBITO_B
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_CREDITO_PRESUPUESTO
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_DEBITO_PRESUPUESTO)
+        ? BigDecimal.ZERO
+        : this.iva21Neto;
+  }
+
+  @JsonGetter("iva105Neto")
+  public BigDecimal getIva105NetoSegunTipoDeComprobante() {
+    return (this.getTipoComprobante() == TipoDeComprobante.NOTA_CREDITO_B
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_DEBITO_B
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_CREDITO_PRESUPUESTO
+            || this.getTipoComprobante() == TipoDeComprobante.NOTA_DEBITO_PRESUPUESTO)
+        ? BigDecimal.ZERO
+        : this.iva105Neto;
+  }
+
   @JsonGetter("idSucursal")
   public Long getIdSucursal() {
     return sucursal.getIdSucursal();

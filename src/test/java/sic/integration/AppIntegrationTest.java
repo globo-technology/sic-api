@@ -622,10 +622,9 @@ class AppIntegrationTest {
             .cantidades(new BigDecimal[]{BigDecimal.ONE})
             .idsRenglonesFactura(new Long[]{renglonesFacturaCompra.get(0).getIdRenglonFactura()})
             .modificaStock(true)
+            .motivo("Unidad Fallada")
             .build();
-    NotaCredito notaCredito = restTemplate.postForObject(apiPrefix + "/notas/credito/calculos", nuevaNotaCreditoDeFacturaDTO, NotaCredito.class);
-    notaCredito.setMotivo("Unidad Fallada");
-    notaCredito = restTemplate.postForObject(apiPrefix + "/notas/credito", notaCredito, NotaCredito.class);
+    NotaCredito notaCredito = restTemplate.postForObject(apiPrefix + "/notas/credito/factura", nuevaNotaCreditoDeFacturaDTO, NotaCredito.class);
     assertEquals(notaCredito.getIdFacturaCompra(), facturasRecuperadas.get(0).getIdFactura());
     assertEquals(notaCredito.getIdNota(), 1L);
     assertEquals(
@@ -689,13 +688,49 @@ class AppIntegrationTest {
             .motivo("No pagamos, la vida es así.")
             .tipoDeComprobante(TipoDeComprobante.NOTA_DEBITO_A)
             .build();
-    NotaDebito notaDebitoCalculada =
+//    NotaDebito notaDebitoCalculada =
+//        restTemplate.postForObject(
+//            apiPrefix + "/notas/debito/calculos", nuevaNotaDebitoDeReciboDTO, NotaDebito.class);
+//    NotaDebito notaDebitoGuardada =
         restTemplate.postForObject(
-            apiPrefix + "/notas/debito/calculos", nuevaNotaDebitoDeReciboDTO, NotaDebito.class);
-    NotaDebito notaDebitoGuardada =
-        restTemplate.postForObject(
-            apiPrefix + "/notas/debito", notaDebitoCalculada, NotaDebito.class);
-    assertEquals(notaDebitoCalculada, notaDebitoGuardada);
+            apiPrefix + "/notas/debito", nuevaNotaDebitoDeReciboDTO, NotaDebito.class);
+
+    BusquedaNotaCriteria criteriaNota =
+            BusquedaNotaCriteria.builder()
+                    .idSucursal(1L)
+                    .tipoComprobante(TipoDeComprobante.NOTA_DEBITO_A)
+                    .build();
+    HttpEntity<BusquedaNotaCriteria> requestEntityNota = new HttpEntity<>(criteriaNota);
+    PaginaRespuestaRest<NotaDebito> resultadoBusquedaNota =
+            restTemplate
+                    .exchange(
+                            apiPrefix + "/notas/debito/busqueda/criteria",
+                            HttpMethod.POST,
+                            requestEntityNota,
+                            new ParameterizedTypeReference<PaginaRespuestaRest<NotaDebito>>() {})
+                    .getBody();
+    assertNotNull(resultadoBusquedaNota);
+    List<NotaDebito> notasRecuperadas = resultadoBusquedaNota.getContent();
+    List<sic.model.RenglonNotaDebito> renglones =
+            Arrays.asList(
+                    restTemplate.getForObject(
+                            apiPrefix + "/notas/renglones/debito/" + notasRecuperadas.get(0).getIdNota(),
+                            sic.model.RenglonNotaDebito[].class));
+    assertNotNull(renglones);
+    assertEquals(2, renglones.size());
+    // renglones
+    assertEquals("Nº Recibo 2-1: Recibo para proveedor", renglones.get(0).getDescripcion());
+    assertEquals(new BigDecimal("554.540000000000000"), renglones.get(0).getMonto());
+    assertEquals(new BigDecimal("554.540000000000000"), renglones.get(0).getImporteBruto());
+    assertEquals(new BigDecimal("0E-15"), renglones.get(0).getIvaPorcentaje());
+    assertEquals(new BigDecimal("0E-15"), renglones.get(0).getIvaNeto());
+    assertEquals(new BigDecimal("554.540000000000000"), renglones.get(0).getImporteNeto());
+    assertEquals("Gasto Administrativo", renglones.get(1).getDescripcion());
+    assertEquals(new BigDecimal("1239.669421487603306"), renglones.get(1).getMonto());
+    assertEquals(new BigDecimal("1239.669421487603306"), renglones.get(1).getImporteBruto());
+    assertEquals(new BigDecimal("21.000000000000000"), renglones.get(1).getIvaPorcentaje());
+    assertEquals(new BigDecimal("260.330578512396694"), renglones.get(1).getIvaNeto());
+    assertEquals(new BigDecimal("1500.000000000000000"), renglones.get(1).getImporteNeto());
   }
 
   @Test
@@ -1372,8 +1407,7 @@ class AppIntegrationTest {
             apiPrefix + "/notas/credito/calculos", nuevaNotaCreditoDTO, NotaCredito.class);
     NotaCredito notaCreditoGuardada =
         restTemplate.postForObject(
-            apiPrefix + "/notas/credito", notaCreditoCalculada, NotaCredito.class);
-    assertEquals(notaCreditoCalculada, notaCreditoGuardada);
+            apiPrefix + "/notas/credito/factura", nuevaNotaCreditoDTO, NotaCredito.class);
     assertEquals(TipoDeComprobante.NOTA_CREDITO_X, notaCreditoCalculada.getTipoComprobante());
     BusquedaNotaCriteria criteriaNota =
         BusquedaNotaCriteria.builder()

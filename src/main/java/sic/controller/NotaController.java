@@ -172,64 +172,54 @@ public class NotaController {
         usuarioService.getUsuarioNoEliminadoPorId(((Integer) claims.get("idUsuario")).longValue()));
   }
 
-  @PostMapping("/notas/credito")
+  @PostMapping("/notas/credito/factura")
   @AccesoRolesPermitidos({Rol.ADMINISTRADOR, Rol.ENCARGADO})
-  public NotaCredito guardarNotaCredito(
-      @RequestBody NotaCreditoDTO notaCreditoDTO,
+  public NotaCredito guardarNotaCreditoDeFactura(
+      @RequestBody NuevaNotaCreditoDeFacturaDTO nuevaNotaCreditoDeFacturaDTO,
       @RequestHeader("Authorization") String authorizationHeader) {
-    NotaCredito notaCredito = modelMapper.map(notaCreditoDTO, NotaCredito.class);
-    notaCredito.setSucursal(sucursalService.getSucursalPorId(notaCreditoDTO.getIdSucursal()));
-    if ((notaCreditoDTO.getIdCliente() != null && notaCreditoDTO.getIdProveedor() != null)
-        || (notaCreditoDTO.getIdCliente() == null && notaCreditoDTO.getIdProveedor() == null)) {
-      throw new BusinessServiceException(messageSource.getMessage(
-        "mensaje_nota_cliente_proveedor_juntos", null, Locale.getDefault()));
-    }
-    if (notaCreditoDTO.getIdCliente() != null) {
-      notaCredito.setCliente(clienteService.getClienteNoEliminadoPorId(notaCreditoDTO.getIdCliente()));
-      notaCredito.setMovimiento(Movimiento.VENTA);
-      if (notaCreditoDTO.getIdFacturaVenta() != null) {
-        notaCredito.setFacturaVenta(
-            (FacturaVenta) facturaService.getFacturaNoEliminadaPorId(notaCreditoDTO.getIdFacturaVenta()));
-      }
-    }
-    if (notaCreditoDTO.getIdProveedor() != null) {
-      notaCredito.setProveedor(proveedorService.getProveedorNoEliminadoPorId(notaCreditoDTO.getIdProveedor()));
-      notaCredito.setMovimiento(Movimiento.COMPRA);
-      if (notaCreditoDTO.getIdFacturaCompra() != null) {
-        notaCredito.setFacturaCompra(
-            (FacturaCompra) facturaService.getFacturaNoEliminadaPorId(notaCreditoDTO.getIdFacturaCompra()));
-      }
-    }
     Claims claims = authService.getClaimsDelToken(authorizationHeader);
-    notaCredito.setUsuario(
-        usuarioService.getUsuarioNoEliminadoPorId(((Integer) claims.get("idUsuario")).longValue()));
-    return notaService.guardarNotaCredito(notaCredito);
+    return notaService.guardarNotaCredito(
+        notaService.calcularNotaCreditoConFactura(
+            nuevaNotaCreditoDeFacturaDTO,
+            usuarioService.getUsuarioNoEliminadoPorId(
+                ((Integer) claims.get("idUsuario")).longValue())));
+  }
+
+  @PostMapping("/notas/credito/sin-factura")
+  @AccesoRolesPermitidos({Rol.ADMINISTRADOR, Rol.ENCARGADO})
+  public NotaCredito guardarNotaCreditoSinFactura(
+      @RequestBody NuevaNotaCreditoSinFacturaDTO nuevaNotaCreditoSinFacturaDTO,
+      @RequestHeader("Authorization") String authorizationHeader) {
+    Claims claims = authService.getClaimsDelToken(authorizationHeader);
+    return notaService.guardarNotaCredito(
+        notaService.calcularNotaCreditoSinFactura(
+            nuevaNotaCreditoSinFacturaDTO,
+            usuarioService.getUsuarioNoEliminadoPorId(
+                ((Integer) claims.get("idUsuario")).longValue())));
   }
 
   @PostMapping("/notas/debito")
   @AccesoRolesPermitidos({Rol.ADMINISTRADOR, Rol.ENCARGADO})
-  public NotaDebito guardarNotaDebito(
-      @RequestBody NotaDebitoDTO notaDebitoDTO,
+  public NotaDebito guardarNotaDebitoDeRecibo(
+      @RequestBody NuevaNotaDebitoDeReciboDTO nuevaNotaDebitoDeReciboDTO,
       @RequestHeader("Authorization") String authorizationHeader) {
-    NotaDebito notaDebito = modelMapper.map(notaDebitoDTO, NotaDebito.class);
-    notaDebito.setSucursal(sucursalService.getSucursalPorId(notaDebitoDTO.getIdSucursal()));
-    if (notaDebitoDTO.getIdCliente() != null) {
-      notaDebito.setCliente(clienteService.getClienteNoEliminadoPorId(notaDebitoDTO.getIdCliente()));
-      notaDebito.setMovimiento(Movimiento.VENTA);
-    }
-    if (notaDebitoDTO.getIdProveedor() != null) {
-      notaDebito.setProveedor(
-          proveedorService.getProveedorNoEliminadoPorId(notaDebitoDTO.getIdProveedor()));
-      notaDebito.setMovimiento(Movimiento.COMPRA);
-    }
-    // recibo
-    if (notaDebitoDTO.getIdRecibo() != null) {
-      notaDebito.setRecibo(reciboService.getReciboNoEliminadoPorId(notaDebitoDTO.getIdRecibo()));
-    }
     Claims claims = authService.getClaimsDelToken(authorizationHeader);
-    notaDebito.setUsuario(
-        usuarioService.getUsuarioNoEliminadoPorId(((Integer) claims.get("idUsuario")).longValue()));
-    return notaService.guardarNotaDebito(notaDebito);
+    return notaService.guardarNotaDebito(
+        notaService.calcularNotaDebitoConRecibo(
+            nuevaNotaDebitoDeReciboDTO,
+            usuarioService.getUsuarioNoEliminadoPorId(
+                ((Integer) claims.get("idUsuario")).longValue())));
+  }
+
+  @PostMapping("/notas/debito/sin-recibo")
+  @AccesoRolesPermitidos({Rol.ADMINISTRADOR, Rol.ENCARGADO})
+  public NotaDebito guardarNotaDebitoSinRecibo(
+          @RequestBody NuevaNotaDebitoSinReciboDTO nuevaNotaDebitoSinReciboDTO,
+          @RequestHeader("Authorization") String authorizationHeader) {
+    Claims claims = authService.getClaimsDelToken(authorizationHeader);
+    return notaService.guardarNotaDebito(notaService.calcularNotaDebitoSinRecibo(
+            nuevaNotaDebitoSinReciboDTO,
+            usuarioService.getUsuarioNoEliminadoPorId(((Integer) claims.get("idUsuario")).longValue())));
   }
 
   @GetMapping("/notas/{idNota}/reporte")

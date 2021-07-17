@@ -111,8 +111,6 @@ public interface INotaService {
 
   void validarReglasDeNegocio(Nota nota);
 
-  void validarCalculosCredito(NotaCredito notaCredito);
-
   void validarCalculosDebito(NotaDebito notaDebito);
 
   BigDecimal calcularTotalCredito(
